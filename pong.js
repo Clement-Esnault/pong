@@ -20,7 +20,7 @@ let ballY = paddleY -20;
 let speedX = -2;  
 let speedY = 2;               // vitesse de la balle
 let rafId;                       // identifiant de la boucle d'animation
-
+let sc=0;
 
 let isLeftPressed = false;
 let isRightPressed = false;
@@ -36,6 +36,15 @@ ctx.beginPath();
 ctx.fillRect(paddleX, paddleY,largeur, longueur);
 ctx.fill();
 
+let nbCoef=0;
+
+// Charger le meilleur score depuis localStorage ou mettre 0 si absent
+let meilleur = localStorage.getItem("meilleur score");
+if (meilleur === null) {
+    meilleur = 0;
+} else {
+    meilleur = parseInt(meilleur);
+}
 
 
 function drawBall() {
@@ -58,34 +67,37 @@ function drawPaddle() {
 function update() {
     ballX += speedX;
     ballY += speedY;
-    const coef = 1.05;
-    let nbCoef=0;
-    if (ballX > canvas.width-15 && nbCoef<5 ){ speedX*=-coef;speedY*=coef;nbCoef++}
-   
-    if (ballX < 15 && nbCoef<5 ){ speedX*=-coef;speedY*=coef;nbCoef++}
+    const coef = 1.15;
+    
+    if (ballX > canvas.width-15  ){ 
+        if(nbCoef <5){speedX*=-coef;speedY*=coef;nbCoef++;}
+        else{speedX*=-1}
+    }
+    if (ballX < 15  ){ 
+        if(nbCoef <5){speedX*=-coef;speedY*=coef;nbCoef++;}
+        else{speedX*=-1}
+    }
+    if (ballY > canvas.height-15 ){ perdue=true;} 
 
-    if (ballY > canvas.height-15 ){ perdue=true;} //speedY*=-1;
-   
-    if (ballY < 15 && nbCoef<5 ){ speedY*=-coef;speedX*=coef;nbCoef++}
+    if (ballY < 15  ){ 
+        if(nbCoef <5){speedY*=-coef;speedX*=coef;nbCoef++;}
+        else{speedY*=-1}
+    }
 
     if (ballY + 15 >= canvas.height - 15 && ballX >= paddleX && ballX <= paddleX + 75 ) {
-        if(nbCoef<5 ){
-        speedY *= -coef; 
-        speedX *= coef;
-        nbCoef++;}
-        sco += 1;
-        //score.textContent="score " + sco;
+        if(nbCoef<5 ){ speedY *= -coef;  speedX *= coef; nbCoef++;}
+        else{speedY*=-1}
+        
     }
 
     if (isLeftPressed && paddleX > 0) {
         paddleX -= 5;
     }
 
-    if (isRightPressed && paddleX < canvas.width - 25) {
+    if (isRightPressed && paddleX < canvas.width - largeur) {
         paddleX += 5;
     }
 
-    
 }
 
 function loop() {
@@ -93,10 +105,16 @@ function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBall(); 
     drawPaddle();
-    temps = Math.floor((performance.now() - startTime) / 1000); // secondes 
-    score.textContent = "score : " + temps ;
-    rafId = requestAnimationFrame(loop); // planifie la prochaine frame
+    temps = Math.floor((performance.now() - startTime) / 1000); 
+    score.textContent = "score : " + temps + " meilleur score " + localStorage.getItem("meilleur score");
+    rafId = requestAnimationFrame(loop); 
     if(perdue==true){
+        if(meilleur < temps){
+        meilleur = temps;
+        localStorage.setItem("meilleur score", meilleur);
+    }
+        
+        score.textContent="score : "+ temps +" meilleur score "+localStorage.getItem("meilleur score");
         reset();
         cancelAnimationFrame(rafId);
     }
@@ -112,7 +130,11 @@ function reset(){
 
     speedX = 2;  // reset de la vitesse X
     speedY = -2;   //reset de la vitesse Y
-    sco = 0; //reset du score
+    
+    nbCoef=0; //reset du nb de rebonts
+    //meilleur = 0;
+    perdue=false;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBall();
     drawPaddle();
@@ -124,7 +146,6 @@ start.addEventListener('click', () => {
         cancelAnimationFrame(rafId);
     }
     reset();
-
     loop();
 });
 
